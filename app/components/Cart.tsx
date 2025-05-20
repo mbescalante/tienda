@@ -1,10 +1,57 @@
-import { useStore } from '../context/StoreContext';
+import { useStore, type CartItem } from '../context/StoreContext';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+interface Coupon {
+  code: string;
+  discount: number;
+  type: 'percentage' | 'fixed';
+}
+
+const AVAILABLE_COUPONS: Coupon[] = [
+  { code: 'WELCOME10', discount: 10, type: 'percentage' },
+  { code: 'SUMMER20', discount: 20, type: 'percentage' },
+  { code: 'FREESHIP', discount: 15, type: 'fixed' },
+];
 
 export const Cart = () => {
   const { state, dispatch } = useStore();
   const [removingItemId, setRemovingItemId] = useState<number | null>(null);
+  const [couponCode, setCouponCode] = useState('');
+  const [couponError, setCouponError] = useState('');
+  const [estimatedDelivery, setEstimatedDelivery] = useState<Date | null>(null);
+
+  useEffect(() => {
+    // Cargar carrito desde localStorage
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      try {
+        const parsedCart: CartItem[] = JSON.parse(savedCart);
+        // Usar SET_CART para reemplazar el estado del carrito con los datos guardados
+        dispatch({ type: 'SET_CART', payload: parsedCart });
+      } catch (e) {
+        console.error("Error loading cart from localStorage:", e);
+        // Opcional: Limpiar localStorage si los datos son inválidos
+        localStorage.removeItem('cart');
+      }
+    }
+
+    // Calcular fecha estimada de entrega (3-5 días hábiles)
+    const deliveryDate = new Date();
+    deliveryDate.setDate(deliveryDate.getDate() + 3 + Math.floor(Math.random() * 3));
+    setEstimatedDelivery(deliveryDate);
+    
+    // Limpiar el efecto si el componente se desmonta
+    return () => {
+      // Puedes añadir lógica de limpieza si es necesaria, aunque para este efecto no es crucial
+    };
+
+  }, [dispatch]); // dispatch es una dependencia estable proporcionada por useReducer
+
+  useEffect(() => {
+    // Guardar carrito en localStorage
+    localStorage.setItem('cart', JSON.stringify(state.cart));
+  }, [state.cart]);
 
   const handleUpdateQuantity = (id: number, quantity: number) => {
     if (quantity < 1) return;
@@ -19,10 +66,35 @@ export const Cart = () => {
     }, 300);
   };
 
-  const total = state.cart.reduce(
+  const handleApplyCoupon = () => {
+    setCouponError('');
+    const coupon = AVAILABLE_COUPONS.find(c => c.code === couponCode.toUpperCase());
+    if (coupon) {
+      dispatch({ type: 'APPLY_COUPON', payload: coupon });
+      setCouponCode('');
+    } else {
+      setCouponError('Cupón no válido');
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    dispatch({ type: 'REMOVE_COUPON' });
+  };
+
+  const subtotal = state.cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
+
+  const discount = state.appliedCoupon
+    ? state.appliedCoupon.type === 'percentage'
+      ? (subtotal * state.appliedCoupon.discount) / 100
+      : state.appliedCoupon.discount
+    : 0;
+
+  const shipping = state.appliedCoupon?.code === 'FREESHIP' ? 0 : 15;
+
+  const total = subtotal - discount + shipping;
 
   if (state.cart.length === 0) {
     return (
@@ -122,12 +194,72 @@ export const Cart = () => {
             <div className="space-y-4">
               <div className="flex justify-between text-gray-600">
                 <span>Subtotal</span>
-                <span>${total.toFixed(2)}</span>
+                <span>${subtotal.toFixed(2)}</span>
               </div>
+
+              {/* Cupón de descuento */}
+              <div className="border-t pt-4">
+                {state.appliedCoupon ? (
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <span className="text-green-600 font-medium">
+                        Cupón aplicado: {state.appliedCoupon.code}
+                      </span>
+                      <p className="text-sm text-gray-600">
+                        {state.appliedCoupon.type === 'percentage'
+                          ? `${state.appliedCoupon.discount}% de descuento`
+                          : `$${state.appliedCoupon.discount} de descuento`}
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleRemoveCoupon}
+                      className="text-red-600 hover:text-red-800 text-sm"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mb-4">
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        placeholder="Código de cupón"
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      <button
+                        onClick={handleApplyCoupon}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        Aplicar
+                      </button>
+                    </div>
+                    {couponError && (
+                      <p className="mt-1 text-sm text-red-600">{couponError}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {discount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Descuento</span>
+                  <span>-${discount.toFixed(2)}</span>
+                </div>
+              )}
+
               <div className="flex justify-between text-gray-600">
                 <span>Envío</span>
-                <span>Gratis</span>
+                <span>{shipping === 0 ? 'Gratis' : `$${shipping.toFixed(2)}`}</span>
               </div>
+
+              {estimatedDelivery && (
+                <div className="text-sm text-gray-600">
+                  Entrega estimada: {estimatedDelivery.toLocaleDateString()}
+                </div>
+              )}
+
               <div className="border-t pt-4">
                 <div className="flex justify-between text-lg font-semibold text-gray-900">
                   <span>Total</span>
