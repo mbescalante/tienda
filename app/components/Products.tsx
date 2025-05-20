@@ -1,9 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '../context/StoreContext';
 import { Link } from 'react-router-dom';
 
 export const Products = () => {
   const { state, dispatch } = useStore();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'price-asc' | 'price-desc' | 'name'>('name');
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 2000]);
 
   useEffect(() => {
     const mockProducts = [
@@ -13,6 +16,7 @@ export const Products = () => {
         price: 899.99,
         description: 'El último smartphone con cámara de alta resolución y procesador de última generación.',
         image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500&auto=format&fit=crop&q=60',
+        category: 'smartphones',
       },
       {
         id: 2,
@@ -20,6 +24,7 @@ export const Products = () => {
         price: 1299.99,
         description: 'Laptop ultraligera con pantalla 4K y batería de larga duración.',
         image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=500&auto=format&fit=crop&q=60',
+        category: 'laptops',
       },
       {
         id: 3,
@@ -27,6 +32,7 @@ export const Products = () => {
         price: 299.99,
         description: 'Reloj inteligente con monitor cardíaco y GPS integrado.',
         image: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=500&auto=format&fit=crop&q=60',
+        category: 'wearables',
       },
       {
         id: 4,
@@ -34,6 +40,7 @@ export const Products = () => {
         price: 199.99,
         description: 'Auriculares con cancelación de ruido y sonido premium.',
         image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60',
+        category: 'audio',
       },
     ];
 
@@ -44,15 +51,85 @@ export const Products = () => {
     dispatch({ type: 'ADD_TO_CART', payload: product });
   };
 
+  const filteredProducts = state.products
+    .filter(product => 
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      product.price >= priceRange[0] &&
+      product.price <= priceRange[1]
+    )
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'price-asc':
+          return a.price - b.price;
+        case 'price-desc':
+          return b.price - a.price;
+        case 'name':
+          return a.name.localeCompare(b.name);
+        default:
+          return 0;
+      }
+    });
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">Nuestros Productos</h1>
         <p className="text-lg text-gray-600">Descubre nuestra selección de productos tecnológicos</p>
       </div>
+
+      <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Buscar productos..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          <svg
+            className="absolute right-3 top-2.5 h-5 w-5 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </div>
+        <div>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="name">Ordenar por nombre</option>
+            <option value="price-asc">Precio: Menor a Mayor</option>
+            <option value="price-desc">Precio: Mayor a Menor</option>
+          </select>
+        </div>
+        <div>
+          <div className="flex items-center space-x-4">
+            <span className="text-gray-600">Precio:</span>
+            <input
+              type="range"
+              min="0"
+              max="2000"
+              step="100"
+              value={priceRange[1]}
+              onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
+              className="w-full"
+            />
+            <span className="text-gray-600">${priceRange[1]}</span>
+          </div>
+        </div>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        {state.products.map((product) => (
+        {filteredProducts.map((product) => (
           <div key={product.id} className="bg-white rounded-xl shadow-lg overflow-hidden transform transition duration-300 hover:scale-105">
             <div className="relative">
               <img
@@ -62,6 +139,9 @@ export const Products = () => {
               />
               <div className="absolute top-0 right-0 bg-blue-600 text-white px-3 py-1 m-2 rounded-full">
                 ${product.price}
+              </div>
+              <div className="absolute top-0 left-0 bg-gray-800 text-white px-3 py-1 m-2 rounded-full text-sm">
+                {product.category}
               </div>
             </div>
             <div className="p-6">
