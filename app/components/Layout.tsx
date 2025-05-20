@@ -53,6 +53,50 @@ export const Layout = () => {
       <main>
         <Outlet />
       </main>
+
+      {/* Footer */}
+      <footer className="bg-gray-800 text-gray-300 py-10 mt-12">
+        <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-4">TechStore</h3>
+            <p className="text-sm">Tu destino para la última tecnología. Explora nuestra amplia selección de productos de alta calidad.</p>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-4">Enlaces Rápidos</h3>
+            <ul className="space-y-2">
+              <li><Link to="/products" className="hover:text-white transition-colors">Productos</Link></li>
+              <li><Link to="/cart" className="hover:text-white transition-colors">Carrito</Link></li>
+              <li><Link to="/checkout" className="hover:text-white transition-colors">Checkout</Link></li>
+              <li><Link to="/profile" className="hover:text-white transition-colors">Mi Cuenta</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-4">Contacto</h3>
+            <ul className="space-y-2 text-sm">
+              <li>Email: info@techstore.com</li>
+              <li>Teléfono: +123 456 7890</li>
+              <li>Dirección: Calle Principal 123, Ciudad Tecnológica</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-4">Síguenos</h3>
+            {/* Puedes añadir íconos de redes sociales aquí */}
+            <div className="flex space-x-4">
+              {/* Ejemplo de ícono (requeriría una librería de íconos o SVGs) */}
+              {/* <a href="#" className="hover:text-white transition-colors"><i className="fab fa-facebook"></i></a> */}
+              {/* <a href="#" className="hover:text-white transition-colors"><i className="fab fa-twitter"></i></a> */}
+              {/* <a href="#" className="hover:text-white transition-colors"><i className="fab fa-instagram"></i></a> */}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 border-t border-gray-700 pt-6 text-center text-sm text-gray-500">
+          © {new Date().getFullYear()} TechStore. Todos los derechos reservados. Milton Bruno Escalantre Mattos.
+        </div>
+      </footer>
     </div>
   );
 }; 
