@@ -30,7 +30,8 @@ type StoreAction =
   | { type: 'SET_PRODUCTS'; payload: Product[] }
   | { type: 'ADD_TO_CART'; payload: Product }
   | { type: 'REMOVE_FROM_CART'; payload: number }
-  | { type: 'UPDATE_QUANTITY'; payload: { id: number; quantity: number } };
+  | { type: 'UPDATE_QUANTITY'; payload: { id: number; quantity: number } }
+  | { type: 'CLEAR_CART' };
 
 // Reducer
 const storeReducer = (state: StoreState, action: StoreAction): StoreState => {
@@ -66,6 +67,11 @@ const storeReducer = (state: StoreState, action: StoreAction): StoreState => {
             ? { ...item, quantity: action.payload.quantity }
             : item
         ),
+      };
+    case 'CLEAR_CART':
+      return {
+        ...state,
+        cart: [],
       };
     default:
       return state;
